@@ -19,3 +19,8 @@ output "In order to login to the VM created, save the following ssh key to a fil
 output "ssh into the VM using root user and the following IP address:" {
   value = "${ibm_is_floating_ip.fip1.address}"
 }
+
+output "ssh_private_ip_addresses" {
+  value = concat ("${ibm_is_instance.vm-main.*.primary_network_interface.0.primary_ipv4_address}",
+                  "${ibm_is_instance.vm-worker.*.primary_network_interface.0.primary_ipv4_address}")
+}

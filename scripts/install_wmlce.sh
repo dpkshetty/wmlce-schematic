@@ -14,7 +14,7 @@
 # limitations under the License.
 
 #source env file
-source /tmp/scripts/env.sh
+#source /tmp/scripts/env.sh
 
 #Install Miniconda
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-ppc64le.sh
@@ -25,7 +25,7 @@ rm Miniconda3-latest-Linux-ppc64le.sh
 eval "$($HOME/miniconda3/bin/conda shell.bash hook)"
 
 #Setup conda environment
-conda config --prepend channels https://wml-ce-proxy-cos.s3.direct.us-east.cloud-object-storage.appdomain.cloud/ 
+conda config --prepend channels https://wml-ce-proxy-cos.s3.direct.us-east.cloud-object-storage.appdomain.cloud/
 conda create --name wmlce_env_${WMLCE_VERSION}  python=${PYTHON_VERSION} -y
 conda activate wmlce_env_${WMLCE_VERSION}
 

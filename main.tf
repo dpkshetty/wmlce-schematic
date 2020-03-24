@@ -79,6 +79,24 @@ resource "ibm_is_instance" "vm" {
   }
 }
 
+resource "ibm_is_instance" "vm-worker" {
+  count   = var.vm_count - 1
+  name    = format("%s-vm-worker%02d", var.basename, count.index + 1)
+  image   = data.ibm_is_image.bootimage.id
+  profile = var.vm_profile
+
+  primary_network_interface {
+    subnet = ibm_is_subnet.subnet.id
+  }
+
+  vpc  = ibm_is_vpc.vpc.id
+  zone = var.vpc_zone
+  keys = [ibm_is_ssh_key.public_key.id]
+  timeouts {
+    create = "120m"
+    delete = "120m"
+  }
+}
 # Create a ssh keypair which will be used to provision code onto the system - and also access the VM for debug if needed.
 resource tls_private_key "ssh_key_keypair" {
   algorithm = "RSA"
@@ -117,7 +135,15 @@ if [[  "${var.vm_profile}" =~ "gp" ]];
 then
     export GPU_CONFIG=1
 fi
+echo "${tls_private_key.ssh_key_keypair.private_key_pem}" >> ~/.ssh/id_rsa
+
+echo "Host *" >> ~/.ssh/config
+echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+echo "  UserKnownHostsFile=/dev/null" >> ~/.ssh/config
+chmod 600 ~/.ssh/id_rsa
+
 ENDENVTEMPL
+
     destination = "/tmp/scripts/env.sh"
     connection {
       type = "ssh"
@@ -133,6 +159,7 @@ ENDENVTEMPL
     inline = [
       "set -e",
       "chmod u+x /tmp/scripts*/*",
+      "/tmp/scripts/env.sh",
       "/tmp/scripts/install_gpu_drivers.sh",
       "/tmp/scripts/install_wmlce.sh",
       "rm -rf /tmp/scripts",

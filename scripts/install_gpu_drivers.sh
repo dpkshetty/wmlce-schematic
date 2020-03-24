@@ -19,7 +19,7 @@
 sleep 60
 
 #source env file
-source /tmp/scripts/env.sh
+#source /tmp/scripts/env.sh
 
 echo "In GPU driver install script"
 echo "GPU_CONFIG = $GPU_CONFIG"
