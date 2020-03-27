@@ -1,0 +1,107 @@
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
+
+DOCUMENTATION = r'''
+    name: wmlce_inv_plugin
+    plugin_type: inventory
+    short_description: Returns Ansible inventory from terraform tfstate file
+    description: Returns Ansible inventory from Terraform tfstate file
+    options:
+      plugin:
+          description: Name of the plugin
+          required: true
+          choices: ['wmlce_inv_plugin']
+      terraform_file:
+        description: Name of the terraform file with relative/absolute path to the file
+        required: true
+'''
+
+
+
+from ansible.plugins.inventory import BaseInventoryPlugin
+from ansible.errors import AnsibleError, AnsibleParserError
+import os
+import json
+
+class InventoryModule(BaseInventoryPlugin):
+    NAME = 'wmlce_inv_plugin'
+
+
+    def verify_file(self, path):
+        '''
+        Return true/false if this is possibly a valid file for this plugin to consume
+        '''
+        valid = False
+        if super(InventoryModule, self).verify_file(path):
+            # base class verifies that file exists and is readable by current user
+            if path.endswith(('wmlce_inv.yaml',
+                              'wmlce_inv.yml')):
+                valid = True
+
+        return valid
+
+    def parse(self, inventory, loader, path, cache):
+        '''Return dynamic inventory from source '''
+        super(InventoryModule, self).parse(inventory, loader, path, cache)
+
+        # Read the inventory YAML file
+        self._read_config_data(path)
+        try:
+            # Store the options from the YAML file
+            self.plugin = self.get_option('plugin')
+            self.tf_file = self.get_option('terraform_file')
+        except Exception as e:
+            raise AnsibleParserError(
+            'All correct options required: {}'.format(e))
+
+        #Check if terraform file exists and readable
+        if (os.access(self.tf_file, os.R_OK) == False):
+            raise AnsibleError('Terraform file {} is not readable by current user'.format(self.tf_file))
+
+        #Read the terraform file
+        tfstate = json.load(open(self.tf_file))
+
+        #Get all the IP addresses
+        floating_ip=tfstate['outputs']['ssh_floating_ip_address']['value']
+        worker_hosts=tfstate['outputs']['ssh_private_ip_addresses']['value'][1:]
+
+        #Output a file with ssh private key
+        ssh_key_file = "ssh/private_ssh_key"
+        self.output_ssh_key(ssh_key_file, tfstate)
+
+        #Output ssh config
+        ssh_cfg_file = "ssh/ssh.cfg"
+        self.output_ssh_cfg(ssh_cfg_file, ssh_key_file, tfstate)
+
+        #Add a default group to the inventory
+        default_grp='default'
+        self.inventory.add_group(default_grp)
+        self.inventory.set_variable(default_grp, 'ansible_ssh_private_key_file', ssh_key_file)
+
+        #Add hosts to the default group
+        self.inventory.add_host(host=floating_ip, group=default_grp)
+        for worker in worker_hosts:
+            self.inventory.add_host(host=worker, group=default_grp)
+
+    def output_ssh_key (self, ssh_key_file, tfstate):
+        with open(ssh_key_file, "w") as ssh_key_fh:
+            print(tfstate['outputs']['ssh_private_key']['value'], file=ssh_key_fh)
+        os.chmod(ssh_key_file, 0o600)
+
+    def output_ssh_cfg (self, ssh_cfg_file, ssh_key_file, tfstate):
+        floating_ip=tfstate['outputs']['ssh_floating_ip_address']['value']
+        worker_hosts=tfstate['outputs']['ssh_private_ip_addresses']['value'][1:]
+        with open(ssh_cfg_file, "w") as ssh_cfg_fh:
+            #Entry for each of the worker VMs
+            for worker in worker_hosts:
+                print("Host {}".format(worker), file=ssh_cfg_fh)
+                print("  ProxyCommand ssh -W %h:%p {}".format(floating_ip), file=ssh_cfg_fh)
+                print("  IdentityFile {}".format(ssh_key_file), file=ssh_cfg_fh)
+
+            #Entry for the main VM with floating IP to route all ssh traffic through
+            print ("Host {}".format(floating_ip), file=ssh_cfg_fh)
+            print ("  User root", file=ssh_cfg_fh)
+            print ("  IdentityFile {}".format(ssh_key_file), file=ssh_cfg_fh)
+            print ("  ControlMaster auto", file=ssh_cfg_fh)
+            print ("  ControlPath ~/.ssh/ansible-%r@%h:%p", file=ssh_cfg_fh)
+            print ("  ControlPersist 50m", file=ssh_cfg_fh)

@@ -1,0 +1,5 @@
+---
+#wmlce_inv.yml
+
+plugin: wmlce_inv_plugin                # Name of the plugin
+terraform_file: ../terraform.tfstate    # Name of the terraform state file
