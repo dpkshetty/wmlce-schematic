@@ -76,12 +76,17 @@ class InventoryModule(BaseInventoryPlugin):
         #Add a default group to the inventory
         default_grp='default'
         self.inventory.add_group(default_grp)
-        self.inventory.set_variable(default_grp, 'ansible_ssh_private_key_file', ssh_key_file)
 
         #Add hosts to the default group
         self.inventory.add_host(host=floating_ip, group=default_grp)
+        self.inventory.set_variable(floating_ip, 'ansible_ssh_private_key_file', ssh_key_file)
+        self.inventory.set_variable(floating_ip, 'ansible_become', 'true')
+        self.inventory.set_variable(floating_ip, 'ansible_become_user', 'root')
         for worker in worker_hosts:
             self.inventory.add_host(host=worker, group=default_grp)
+            self.inventory.set_variable(worker, 'ansible_ssh_private_key_file', ssh_key_file)
+            self.inventory.set_variable(worker, 'ansible_become', 'true')
+            self.inventory.set_variable(worker, 'ansible_become_user', 'root')
 
     def output_ssh_key (self, ssh_key_file, tfstate):
         with open(ssh_key_file, "w") as ssh_key_fh:
@@ -95,13 +100,16 @@ class InventoryModule(BaseInventoryPlugin):
             #Entry for each of the worker VMs
             for worker in worker_hosts:
                 print("Host {}".format(worker), file=ssh_cfg_fh)
-                print("  ProxyCommand ssh -W %h:%p {}".format(floating_ip), file=ssh_cfg_fh)
+                print("  HostName {}".format(worker), file=ssh_cfg_fh)
+                print("  User root", file=ssh_cfg_fh)
+                print("  ProxyCommand ssh -W %h:%p -i {}  root@{}".format(ssh_key_file, floating_ip), file=ssh_cfg_fh)
                 print("  IdentityFile {}".format(ssh_key_file), file=ssh_cfg_fh)
 
             #Entry for the main VM with floating IP to route all ssh traffic through
             print ("Host {}".format(floating_ip), file=ssh_cfg_fh)
+            print ("  HostName {}".format(floating_ip), file=ssh_cfg_fh)
             print ("  User root", file=ssh_cfg_fh)
             print ("  IdentityFile {}".format(ssh_key_file), file=ssh_cfg_fh)
             print ("  ControlMaster auto", file=ssh_cfg_fh)
-            print ("  ControlPath ~/.ssh/ansible-%r@%h:%p", file=ssh_cfg_fh)
+            print ("  ControlPath ~/.ssh/ansible-root@%h:%p", file=ssh_cfg_fh)
             print ("  ControlPersist 50m", file=ssh_cfg_fh)
