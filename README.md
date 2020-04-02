@@ -51,4 +51,3 @@ terraform destroy
 ## Future Improvements being worked on
 - Not having to create a new Virtual Server Instance each time
 
-
