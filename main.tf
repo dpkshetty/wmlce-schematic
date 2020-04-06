@@ -35,7 +35,7 @@ resource "ibm_is_subnet" "subnet" {
   public_gateway           = "${ibm_is_public_gateway.publicgateway.id}"
 }
 
-# Create an SSH key which will be used for provisioning by this template, and for debug purposes
+# Create an public/private ssh key pair to be used to login to VMs
 resource ibm_is_ssh_key "public_key" {
   name = "${var.basename}-public-key"
   public_key = "${tls_private_key.ssh_key_keypair.public_key_openssh}"
@@ -47,7 +47,7 @@ resource "ibm_is_floating_ip" "fip1" {
   target = "${ibm_is_instance.vm.primary_network_interface.0.id}"
 }
 
-# Enable ssh into the instance for debug
+# Enable ssh into the VM instances
 resource "ibm_is_security_group_rule" "sg1-tcp-rule" {
   count = "${length(local.ports)}"
   depends_on = [
@@ -111,74 +111,22 @@ resource tls_private_key "ssh_key_keypair" {
 }
 
 resource "null_resource" "provisioners" {
-
-  triggers = {
-    vmid = "${ibm_is_instance.vm.id}"
-  }
-
-  depends_on = [
-    "ibm_is_security_group_rule.sg1-tcp-rule"
-  ]
-
-  provisioner "file" {
-    source =  "scripts"
-    destination = "/tmp"
-    connection {
-      type = "ssh"
-      user = "root"
-      agent = false
-      timeout = "5m"
-      host = "${ibm_is_floating_ip.fip1.address}"
-      private_key = "${tls_private_key.ssh_key_keypair.private_key_pem}"
-    }
-  }
-
-  provisioner "file" {
-    content = <<ENDENVTEMPL
-#!/bin/bash -xe
-export WMLCE_VERSION=${var.wmlce_version}
-export PYTHON_VERSION=${var.python_version}
-if [[  "${var.vm_profile}" =~ "gp" ]];
-then
-    export GPU_CONFIG=1
-fi
-echo "${tls_private_key.ssh_key_keypair.private_key_pem}" >> ~/.ssh/id_rsa
-
-echo "Host *" >> ~/.ssh/config
-echo "  StrictHostKeyChecking no" >> ~/.ssh/config
-echo "  UserKnownHostsFile=/dev/null" >> ~/.ssh/config
-chmod 600 ~/.ssh/id_rsa
-
-ENDENVTEMPL
-
-    destination = "/tmp/scripts/env.sh"
-    connection {
-      type = "ssh"
-      user = "root"
-      agent = false
-      timeout = "5m"
-      host = "${ibm_is_floating_ip.fip1.address}"
-      private_key = "${tls_private_key.ssh_key_keypair.private_key_pem}"
-    }
-  }
+  depends_on = ["ibm_is_security_group_rule.sg1-tcp-rule" ]
 
   provisioner "remote-exec" {
-    inline = [
-      "set -e",
-      "chmod u+x /tmp/scripts*/*",
-      "/tmp/scripts/env.sh",
-      "/tmp/scripts/install_gpu_drivers.sh",
-      "/tmp/scripts/install_wmlce.sh",
-      "rm -rf /tmp/scripts",
-      "exit 0",
-    ]
-    connection {
-      type = "ssh"
-      user = "root"
-      agent = false
-      timeout = "120m"
-      host = "${ibm_is_floating_ip.fip1.address}"
-      private_key = "${tls_private_key.ssh_key_keypair.private_key_pem}"
+  inline = ["date"]
+  connection {
+    type = "ssh"
+    user = "root"
+    agent = false
+    timeout = "120m"
+    host = "${ibm_is_floating_ip.fip1.address}"
+    private_key = "${tls_private_key.ssh_key_keypair.private_key_pem}"
     }
+  }
+
+  provisioner "local-exec" {
+    working_dir = "ansible"
+    command = "ansible-playbook -vv -i .  main.yml"
   }
 }
