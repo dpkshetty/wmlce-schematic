@@ -1,0 +1,7 @@
+---
+- hosts: default
+  roles:
+    - nvidia.nvidia_driver
+  tasks:
+    - name: sanity check driver install
+      command: nvidia-smi

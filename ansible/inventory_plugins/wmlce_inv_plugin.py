@@ -82,11 +82,13 @@ class InventoryModule(BaseInventoryPlugin):
         self.inventory.set_variable(floating_ip, 'ansible_ssh_private_key_file', ssh_key_file)
         self.inventory.set_variable(floating_ip, 'ansible_become', 'true')
         self.inventory.set_variable(floating_ip, 'ansible_become_user', 'root')
+        self.inventory.set_variable(floating_ip, 'ansible_user', 'root')
         for worker in worker_hosts:
             self.inventory.add_host(host=worker, group=default_grp)
             self.inventory.set_variable(worker, 'ansible_ssh_private_key_file', ssh_key_file)
             self.inventory.set_variable(worker, 'ansible_become', 'true')
             self.inventory.set_variable(worker, 'ansible_become_user', 'root')
+            self.inventory.set_variable(worker, 'ansible_user', 'root')
 
     def output_ssh_key (self, ssh_key_file, tfstate):
         with open(ssh_key_file, "w") as ssh_key_fh:
