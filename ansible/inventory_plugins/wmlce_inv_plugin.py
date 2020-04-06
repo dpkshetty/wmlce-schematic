@@ -65,6 +65,10 @@ class InventoryModule(BaseInventoryPlugin):
         floating_ip=tfstate['outputs']['ssh_floating_ip_address']['value']
         worker_hosts=tfstate['outputs']['ssh_private_ip_addresses']['value'][1:]
 
+        #Output a file with env variables
+        env_file = "ssh/env.sh"
+        self.output_env_file(env_file, tfstate)
+
         #Output a file with ssh private key
         ssh_key_file = "ssh/private_ssh_key"
         self.output_ssh_key(ssh_key_file, tfstate)
@@ -90,6 +94,18 @@ class InventoryModule(BaseInventoryPlugin):
             self.inventory.set_variable(worker, 'ansible_become_user', 'root')
             self.inventory.set_variable(worker, 'ansible_user', 'root')
 
+    def output_env_file(self, env_file, tfstate):
+        with open(env_file, "w") as env_file_fh:
+            print ("export WMLCE_VERSION={}".format(tfstate['outputs']['wmlce_version']['value']), file=env_file_fh)
+            print ("export PYTHON_VERSION={}".format(tfstate['outputs']['python_version']['value']), file=env_file_fh)
+            vm_profile = tfstate['outputs']['vm_profile']['value']
+            print (vm_profile)
+            if ('gp' in vm_profile):
+                print ("export GPU_CONFIG=1", file=env_file_fh)
+            else:
+                print ("export GPU_CONFIG=0", file=env_file_fh)
+
+
     def output_ssh_key (self, ssh_key_file, tfstate):
         with open(ssh_key_file, "w") as ssh_key_fh:
             print(tfstate['outputs']['ssh_private_key']['value'], file=ssh_key_fh)
@@ -106,12 +122,14 @@ class InventoryModule(BaseInventoryPlugin):
                 print("  User root", file=ssh_cfg_fh)
                 print("  ProxyCommand ssh -W %h:%p -i {}  root@{}".format(ssh_key_file, floating_ip), file=ssh_cfg_fh)
                 print("  IdentityFile {}".format(ssh_key_file), file=ssh_cfg_fh)
+                print("  IdentitiesOnly=yes", file=ssh_cfg_fh)
 
             #Entry for the main VM with floating IP to route all ssh traffic through
             print ("Host {}".format(floating_ip), file=ssh_cfg_fh)
             print ("  HostName {}".format(floating_ip), file=ssh_cfg_fh)
             print ("  User root", file=ssh_cfg_fh)
             print ("  IdentityFile {}".format(ssh_key_file), file=ssh_cfg_fh)
+            print ("  IdentitiesOnly=yes", file=ssh_cfg_fh)
             print ("  ControlMaster auto", file=ssh_cfg_fh)
             print ("  ControlPath ~/.ssh/ansible-root@%h:%p", file=ssh_cfg_fh)
             print ("  ControlPersist 50m", file=ssh_cfg_fh)

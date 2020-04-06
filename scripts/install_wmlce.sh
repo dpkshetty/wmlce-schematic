@@ -14,7 +14,7 @@
 # limitations under the License.
 
 #source env file
-#source /tmp/scripts/env.sh
+source /tmp/scripts/env.sh
 
 #Install Miniconda
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-ppc64le.sh

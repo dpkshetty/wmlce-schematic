@@ -1,7 +1,17 @@
 ---
 - hosts: default
-  roles:
-    - nvidia.nvidia_driver
   tasks:
-    - name: sanity check driver install
-      command: nvidia-smi
+    - name: Copy install scripts to the remote hosts
+      copy:
+        src: ../scripts/
+        dest: /tmp/scripts
+        mode: u=rwx,g=rx,o=rx
+    - name: Copy env scripts to the remote hosts
+      copy:
+        src: ssh/env.sh
+        dest: /tmp/scripts/env.sh
+        mode: u=rwx,g=rx,o=rx
+    - name: install gpu driver
+      command: /tmp/scripts/install_gpu_drivers.sh
+    - name: install wmlce
+      command: /tmp/scripts/install_wmlce.sh

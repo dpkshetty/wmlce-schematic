@@ -24,3 +24,15 @@ output "ssh_private_ip_addresses" {
   value = concat ("${ibm_is_instance.vm-main.*.primary_network_interface.0.primary_ipv4_address}",
                   "${ibm_is_instance.vm-worker.*.primary_network_interface.0.primary_ipv4_address}")
 }
+
+output "wmlce_version" {
+  value = var.wmlce_version
+}
+
+output "python_version" {
+  value = var.python_version
+}
+
+output "vm_profile" {
+  value = var.vm_profile
+}

@@ -20,12 +20,19 @@ resource ibm_is_vpc "vpc" {
   name = "${var.basename}-vpc"
 }
 
-resource ibm_is_subnet "subnet" {
-  name = "${var.basename}-subnet"
+resource "ibm_is_public_gateway" "publicgateway" {
+  name = "gateway"
   vpc  = "${ibm_is_vpc.vpc.id}"
   zone = "${var.vpc_zone}"
-  ip_version = "ipv4"
+}
+
+resource "ibm_is_subnet" "subnet" {
+  name                     = "${var.basename}-subnet"
+  vpc                      = "${ibm_is_vpc.vpc.id}"
+  zone                     = "${var.vpc_zone}"
+  ip_version               = "ipv4"
   total_ipv4_address_count = 16
+  public_gateway           = "${ibm_is_public_gateway.publicgateway.id}"
 }
 
 # Create an SSH key which will be used for provisioning by this template, and for debug purposes
@@ -80,18 +87,18 @@ resource "ibm_is_instance" "vm" {
 }
 
 resource "ibm_is_instance" "vm-worker" {
-  count   = var.vm_count - 1
-  name    = format("%s-vm-worker%02d", var.basename, count.index + 1)
-  image   = data.ibm_is_image.bootimage.id
-  profile = var.vm_profile
+  count   = "${var.vm_count}" - 1
+  name    = format("%s-vm-worker%02d", "${var.basename}", count.index + 1)
+  image   = "${data.ibm_is_image.bootimage.id}"
+  profile = "${var.vm_profile}"
 
   primary_network_interface {
-    subnet = ibm_is_subnet.subnet.id
+    subnet = "${ibm_is_subnet.subnet.id}"
   }
 
-  vpc  = ibm_is_vpc.vpc.id
-  zone = var.vpc_zone
-  keys = [ibm_is_ssh_key.public_key.id]
+  vpc  = "${ibm_is_vpc.vpc.id}"
+  zone = "${var.vpc_zone}"
+  keys = ["${ibm_is_ssh_key.public_key.id}"]
   timeouts {
     create = "120m"
     delete = "120m"
