@@ -12,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-variable "ibmcloud_api_key" {
-    description = "Denotes the IBM Cloud API key to use"
-}
-
 variable "wmlce_version" {
   description = "Watson Machine Learning Community Edition (WMLCE) version to install"
   default = "1.7.0"
