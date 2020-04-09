@@ -127,6 +127,6 @@ resource "null_resource" "provisioners" {
 
   provisioner "local-exec" {
     working_dir = "ansible"
-    command = "ansible-playbook -vv -i .  main.yml"
+    command = "ansible-playbook -vvv -i .  main.yml"
   }
 }

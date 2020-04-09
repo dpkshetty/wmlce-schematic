@@ -17,7 +17,23 @@
 source /tmp/scripts/env.sh
 
 #Install Miniconda
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-ppc64le.sh
+#Sometimes wget fails to resolve repo.anaconda.com, that's why, adding a retry loop
+retry=0
+maxRetries=5
+retryInterval=5
+until [ ${retry} -ge ${maxRetries} ]
+do
+	wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-ppc64le.sh && break
+	retry=$[${retry}+1]
+	echo "Retrying [${retry}/${maxRetries}] in ${retryInterval}(s) "
+	sleep ${retryInterval}
+done
+
+if [ ${retry} -ge ${maxRetries} ]; then
+  echo "Failed after ${maxRetries} attempts!"
+  exit 1
+fi
+
 bash Miniconda3-latest-Linux-ppc64le.sh -b -f
 rm Miniconda3-latest-Linux-ppc64le.sh
 

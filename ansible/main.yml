@@ -11,6 +11,16 @@
         src: ssh/env.sh
         dest: /tmp/scripts/env.sh
         mode: u=rwx,g=rx,o=rx
+    - name: Copy ssh config file for all the remote hosts
+      copy:
+        src: ssh/remote_ssh.cfg
+        dest: ~/.ssh/config
+        mode: u=rw,g=r,o=r
+    - name: Copy private ssh key to remote hosts to enable passwordless ssh
+      copy:
+        src: ssh/private_ssh_key
+        dest: ~/.ssh/id_rsa
+        mode: '0600'
     - name: install gpu driver
       command: /tmp/scripts/install_gpu_drivers.sh
     - name: install wmlce
