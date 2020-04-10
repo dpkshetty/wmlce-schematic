@@ -32,8 +32,8 @@ variable "vm_count" {
 }
 
 variable "vm_profile" {
-  description = "What resources or VM profile should we create for compute? Default is 2 GPUs, 24 vCPUs, 224G memory, 72Gbps Network"
-  default = "gp2-24x224x2"
+  description = "What resources or VM profile should we create for compute? Default is 2 GPUs, 8 vCPUs, 64G memory, 72Gbps Network"
+  default = "gp2-8x64x2"
 }
 
 variable "boot_image_name" {

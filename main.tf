@@ -44,7 +44,7 @@ resource ibm_is_ssh_key "public_key" {
 # Create a public floating IP so that the app is available on the Internet
 resource "ibm_is_floating_ip" "fip1" {
   name = "${var.basename}-fip"
-  target = "${ibm_is_instance.vm.primary_network_interface.0.id}"
+  target = "${ibm_is_instance.vm-main.primary_network_interface.0.id}"
 }
 
 # Enable ssh into the VM instances
@@ -68,8 +68,8 @@ data ibm_is_image "bootimage" {
     name = "${var.boot_image_name}"
 }
 
-resource "ibm_is_instance" "vm" {
-  name = "${var.basename}-vm1"
+resource "ibm_is_instance" "vm-main" {
+  name = "${var.basename}-vm-main"
   image = "${data.ibm_is_image.bootimage.id}"
   profile = "${var.vm_profile}"
 
@@ -87,8 +87,8 @@ resource "ibm_is_instance" "vm" {
 }
 
 resource "ibm_is_instance" "vm-worker" {
-  count   = "${var.vm_count}" - 1
-  name    = format("%s-vm-worker%02d", "${var.basename}", count.index + 1)
+  count   = "${var.vm_count - 1}"
+  name    = "${format("vm-worker-%02d", count.index + 1)}"
   image   = "${data.ibm_is_image.bootimage.id}"
   profile = "${var.vm_profile}"
 
@@ -119,7 +119,7 @@ resource "null_resource" "provisioners" {
     type = "ssh"
     user = "root"
     agent = false
-    timeout = "120m"
+    timeout = "2m"
     host = "${ibm_is_floating_ip.fip1.address}"
     private_key = "${tls_private_key.ssh_key_keypair.private_key_pem}"
     }
@@ -127,6 +127,6 @@ resource "null_resource" "provisioners" {
 
   provisioner "local-exec" {
     working_dir = "ansible"
-    command = "ansible-playbook -vvv -i .  main.yml"
+    command = "ansible-playbook -vvv --timeout 1800 -i .  main.yml"
   }
 }

@@ -61,9 +61,11 @@ class InventoryModule(BaseInventoryPlugin):
         #Read the terraform file
         tfstate = json.load(open(self.tf_file))
 
+        tfstate = tfstate["modules"][0]
+
         #Get all the IP addresses
         floating_ip=tfstate['outputs']['ssh_floating_ip_address']['value']
-        worker_hosts=tfstate['outputs']['ssh_private_ip_addresses']['value'][1:]
+        worker_hosts=tfstate['outputs']['ssh_private_ip_addresses']['value']
 
         #Output a file with env variables
         env_file = "ssh/env.sh"
@@ -113,7 +115,7 @@ class InventoryModule(BaseInventoryPlugin):
 
     def output_ssh_cfg (self, ssh_cfg_file, ssh_key_file, tfstate):
         floating_ip=tfstate['outputs']['ssh_floating_ip_address']['value']
-        worker_hosts=tfstate['outputs']['ssh_private_ip_addresses']['value'][1:]
+        worker_hosts=tfstate['outputs']['ssh_private_ip_addresses']['value']
         with open(ssh_cfg_file, "w") as ssh_cfg_fh:
             #Entry for each of the worker VMs
             for worker in worker_hosts:
