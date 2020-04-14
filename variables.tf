@@ -26,9 +26,14 @@ variable "python_version" {
   default = "3.7"
 }
 
+variable "vm_count" {
+  description = "Number of VMs to be provisioned for WMLCE. Each VM has 2 GPUs."
+  default     = "2"
+}
+
 variable "vm_profile" {
-  description = "What resources or VM profile should we create for compute? Default is 2 GPUs, 24 vCPUs, 224G memory, 72Gbps Network"
-  default = "gp2-24x224x2"
+  description = "What resources or VM profile should we create for compute? Default is 2 GPUs, 8 vCPUs, 64G memory, 72Gbps Network"
+  default = "gp2-8x64x2"
 }
 
 variable "boot_image_name" {
