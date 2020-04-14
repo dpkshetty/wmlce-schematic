@@ -119,7 +119,7 @@ resource "null_resource" "provisioners" {
     type = "ssh"
     user = "root"
     agent = false
-    timeout = "2m"
+    timeout = "60m"
     host = "${ibm_is_floating_ip.fip1.address}"
     private_key = "${tls_private_key.ssh_key_keypair.private_key_pem}"
     }
