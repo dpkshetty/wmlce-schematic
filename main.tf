@@ -81,8 +81,8 @@ resource "ibm_is_instance" "vm-main" {
   zone = "${var.vpc_zone}"
   keys      = ["${ibm_is_ssh_key.public_key.id}"]
   timeouts {
-    create = "120m"
-    delete = "120m"
+    create = "10m"
+    delete = "10m"
   }
 }
 
@@ -100,8 +100,8 @@ resource "ibm_is_instance" "vm-worker" {
   zone = "${var.vpc_zone}"
   keys = ["${ibm_is_ssh_key.public_key.id}"]
   timeouts {
-    create = "120m"
-    delete = "120m"
+    create = "10m"
+    delete = "10m"
   }
 }
 # Create a ssh keypair which will be used to provision code onto the system - and also access the VM for debug if needed.
