@@ -81,14 +81,14 @@ resource "ibm_is_instance" "vm-main" {
   zone = "${var.vpc_zone}"
   keys      = ["${ibm_is_ssh_key.public_key.id}"]
   timeouts {
-    create = "10m"
-    delete = "10m"
+    create = "120m"
+    delete = "120m"
   }
 }
 
 resource "ibm_is_instance" "vm-worker" {
   count   = "${var.vm_count - 1}"
-  name    = "${format("vm-worker-%02d", count.index + 1)}"
+  name    = "${format("%s-vm-worker-%02d", var.basename, count.index + 1)}"
   image   = "${data.ibm_is_image.bootimage.id}"
   profile = "${var.vm_profile}"
 
@@ -100,8 +100,8 @@ resource "ibm_is_instance" "vm-worker" {
   zone = "${var.vpc_zone}"
   keys = ["${ibm_is_ssh_key.public_key.id}"]
   timeouts {
-    create = "10m"
-    delete = "10m"
+    create = "120m"
+    delete = "120m"
   }
 }
 # Create a ssh keypair which will be used to provision code onto the system - and also access the VM for debug if needed.
@@ -114,7 +114,7 @@ resource "null_resource" "provisioners" {
   depends_on = ["ibm_is_security_group_rule.sg1-tcp-rule" ]
 
   provisioner "remote-exec" {
-  inline = ["date"]
+  inline = ["apt -y update && apt install -y python"]
   connection {
     type = "ssh"
     user = "root"
@@ -127,6 +127,6 @@ resource "null_resource" "provisioners" {
 
   provisioner "local-exec" {
     working_dir = "ansible"
-    command = "ansible-playbook -vvv --timeout 1800 -i .  main.yml"
+    command = "ansible-playbook -vvv --timeout 3600 -i .  main.yml"
   }
 }

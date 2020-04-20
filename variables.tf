@@ -38,7 +38,7 @@ variable "vm_profile" {
 
 variable "boot_image_name" {
   description = "name of the base image for the virtual server (should be an Ubuntu 18.04 base)"
-  default = "ibm-ubuntu-18-04-3-minimal-ppc64le-2"
+  default = "ibm-ubuntu-18-04-3-minimal-ppc64le-4"
 }
 
 variable "basename" {
