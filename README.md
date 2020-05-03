@@ -15,7 +15,7 @@ This deployment provisions:
   2. Creates a new ssh key to login
   3. Opens Ports 80, 443 in VPC Security Group port to access web page
   4. Opens Ports 22 to access SSH console
-  5. Sets up NVIDIA driver and installs WMLCE packages
+  5. Sets up NVIDIA driver and installs WMLCE packages in a conda env (typically named as wmlce_env_<ver>)
 
 After install, you can ssh into the VM through the floating IP and private ssh key
 
